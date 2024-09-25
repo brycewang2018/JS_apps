@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>秒表</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 50px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 18px;
+            margin-top: 20px;
+            margin-right: 10px;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            font-size: 18px;
+            margin: 5px 0;
+        }
+        #timer {
+            font-size: 48px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Timer</h1>
+    <div id="timer">00:00:00:000</div> <!-- Display in milliseconds -->
+    <button id="startPauseButton">Start</button>
+    <button id="lapButton" disabled>Record Lap</button>
+    <button id="resetButton" disabled>Reset</button>
+    <ul id="lapTimes"></ul>
+
+    <script>
+        let timerInterval = null;    // Store the interval ID for the timer
+        let elapsedTime = 0;         // Total elapsed time in milliseconds
+        let lapTimes = [];           // Array to store lap times
+        let previousLapTime = 0;     // Store the time when the last lap was recorded
+        let running = false;         // Flag to track if the timer is running or paused
+
+        const timerDisplay = document.getElementById('timer');         // Timer display element
+        const startPauseButton = document.getElementById('startPauseButton');  // Start/Pause button
+        const lapButton = document.getElementById('lapButton');        // Lap button
+        const resetButton = document.getElementById('resetButton');    // Reset button
+        const lapList = document.getElementById('lapTimes');           // List to display lap times
+
+        // Function to format time from milliseconds into HH:MM:SS:ms format
+        function formatTime(ms) {
+            const totalSeconds = Math.floor(ms / 1000);  // Convert milliseconds to total seconds
+            const hours = Math.floor(totalSeconds / 3600);  // Calculate hours
+            const minutes = Math.floor((totalSeconds % 3600) / 60);  // Calculate minutes
+            const seconds = totalSeconds % 60;  // Calculate seconds
+            const milliseconds = ms % 1000;  // Remaining milliseconds
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}:${String(milliseconds).padStart(3, '0')}`;
+        }
+
+        // Update the timer display with the current elapsed time
+        function updateTimer() {
+            timerDisplay.textContent = formatTime(elapsedTime);
+        }
+
+        // Event listener for Start/Pause button to control the timer
+        startPauseButton.addEventListener('click', () => {
+            if (running) {
+                // If running, pause the timer
+                clearInterval(timerInterval);  // Clear the interval to stop the timer
+                startPauseButton.textContent = 'Start';  // Change button text to "Start"
+                lapButton.disabled = true;  // Disable the Lap button while paused
+                resetButton.disabled = false;  // Enable the Reset button
+            } else {
+                // If not running, start the timer
+                timerInterval = setInterval(() => {
+                    elapsedTime += 10;  // Increment the elapsed time by 10 milliseconds
+                    updateTimer();  // Update the timer display
+                }, 10);  // Update every 10 milliseconds
+                startPauseButton.textContent = 'Pause';  // Change button text to "Pause"
+                lapButton.disabled = false;  // Enable the Lap button while running
+                resetButton.disabled = false;  // Enable the Reset button
+            }
+            running = !running;  // Toggle the running state
+        });
+
+        // Event listener for Lap button to record the current lap time
+        lapButton.addEventListener('click', () => {
+            const lapTime = elapsedTime;  // Record the current time as lap time
+            const intervalTime = lapTime - previousLapTime;  // Calculate time since the last lap
+            previousLapTime = lapTime;  // Update the last lap time
+
+            // Store the lap time and interval in the lapTimes array
+            lapTimes.push({ lapTime, intervalTime });
+            displayLapTimes();  // Display the updated lap times
+        });
+
+        // Event listener for Reset button to reset the timer and clear all lap records
+        resetButton.addEventListener('click', () => {
+            clearInterval(timerInterval);  // Stop the timer
+            elapsedTime = 0;  // Reset the elapsed time
+            lapTimes = [];  // Clear the lap times array
+            previousLapTime = 0;  // Reset the last lap time
+            running = false;  // Set the running state to false
+            updateTimer();  // Reset the timer display
+            lapList.innerHTML = '';  // Clear the lap list on the webpage
+            startPauseButton.textContent = 'Start';  // Reset the button text to "Start"
+            lapButton.disabled = true;  // Disable the Lap button
+            resetButton.disabled = true;  // Disable the Reset button
+        });
+
+        // Function to display the recorded lap times on the webpage
+        function displayLapTimes() {
+            lapList.innerHTML = '';  // Clear the current lap list
+            lapTimes.forEach((lap, index) => {
+                // Create a list item for each lap time
+                const listItem = document.createElement('li');
+                listItem.textContent = `Lap ${index + 1} Time: ${formatTime(lap.lapTime)}, Lap Interval: ${(lap.intervalTime / 1000).toFixed(3)} seconds`;
+                lapList.appendChild(listItem);  // Append the lap time to the list
+            });
+        }
+    </script>
+</body>
+</html>
